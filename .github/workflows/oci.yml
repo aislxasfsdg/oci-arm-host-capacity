@@ -29,12 +29,12 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-versions }}
+          
       - name: Create OCI private key file
         run: |
-              cat <<EOF > oci_api_key.pem
-              ${{ secrets.OCI_PRIVATE_KEY }}
-              EOF
-              chmod 600 oci_api_key.pem
+              printf "%s" "${{ secrets.OCI_PRIVATE_KEY }}" > /tmp/oci_api_key.pem
+              chmod 600 /tmp/oci_api_key.pem
+              
       - name: Validate composer.json and composer.lock
         run: composer validate
 
