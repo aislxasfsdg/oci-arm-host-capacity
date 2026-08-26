@@ -5,7 +5,6 @@ namespace Hitrov\Test;
 
 
 use Hitrov\Exception\ApiCallException;
-use Hitrov\Exception\TooManyRequestsWaiterException;
 use Hitrov\Test\Traits\LoadEnv;
 
 class OciApiWithEnvFileTest extends OciApiTest
@@ -21,17 +20,9 @@ class OciApiWithEnvFileTest extends OciApiTest
 
     public function testCreateInstance(): void
     {
-        try {
-            self::$api->createInstance(self::$config, getenv('OCI_SHAPE'), getenv('OCI_SSH_PUBLIC_KEY'), getenv('OCI_AVAILABILITY_DOMAIN'));
-            $this->fail('Expected ApiCallException to be thrown');
-        } catch (TooManyRequestsWaiterException $e) {
-            // Rate limited (429) - this is acceptable, skip the test
-            $this->markTestSkipped('Rate limited: ' . $e->getMessage());
-        } catch (ApiCallException $e) {
-            // Expected - API call failed (either 400 or 429 wrapped as ApiCallException)
-            // Verify it's an error related to the API call, not something else
-            $this->assertNotEmpty($e->getMessage());
-        }
+        $this->expectException(ApiCallException::class);
+
+        self::$api->createInstance(self::$config, getenv('OCI_SHAPE'), getenv('OCI_SSH_PUBLIC_KEY'), getenv('OCI_AVAILABILITY_DOMAIN'));
     }
 
     protected function setEnv(): void
