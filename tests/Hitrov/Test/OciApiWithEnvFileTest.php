@@ -25,10 +25,12 @@ class OciApiWithEnvFileTest extends OciApiTest
             self::$api->createInstance(self::$config, getenv('OCI_SHAPE'), getenv('OCI_SSH_PUBLIC_KEY'), getenv('OCI_AVAILABILITY_DOMAIN'));
             $this->fail('Expected ApiCallException to be thrown');
         } catch (TooManyRequestsWaiterException $e) {
+            // Rate limited (429) - this is acceptable, skip the test
             $this->markTestSkipped('Rate limited: ' . $e->getMessage());
         } catch (ApiCallException $e) {
-            // Expected behavior - API call failed with an exception
-            $this->assertTrue(true);
+            // Expected - API call failed (either 400 or 429 wrapped as ApiCallException)
+            // Verify it's an error related to the API call, not something else
+            $this->assertNotEmpty($e->getMessage());
         }
     }
 
