@@ -23,9 +23,9 @@ class OciConfig
     public ?int $ocpus;
     public ?int $memoryInGBs;
 
-    public string $sourceDetails;
-    public string $bootVolumeId;
-    public string $bootVolumeSizeInGBs;
+    public string $sourceDetails = '';
+    public string $bootVolumeId = '';
+    public string $bootVolumeSizeInGBs = '';
 
     /**
      * @param string $region
@@ -79,7 +79,7 @@ class OciConfig
      */
     public function getSourceDetails(): string
     {
-        if (isset($this->sourceDetails)) {
+        if (isset($this->sourceDetails) && !empty($this->sourceDetails)) {
             return $this->sourceDetails;
         }
 
