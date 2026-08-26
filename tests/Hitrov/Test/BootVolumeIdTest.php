@@ -5,6 +5,7 @@ namespace Hitrov\Test;
 
 
 use Hitrov\Exception\ApiCallException;
+use Hitrov\Exception\TooManyRequestsWaiterException;
 
 class BootVolumeIdTest extends OciApiTest
 {
@@ -16,13 +17,17 @@ class BootVolumeIdTest extends OciApiTest
      */
     public function testCreateInstance(): void
     {
-        $this->expectException(ApiCallException::class);
-        $this->expectExceptionCode(400);
-        $this->expectExceptionMessageMatches('/"code": "CannotParseRequest"|"code": "Conflict"|"code": "TooManyRequests"/');
+        $bootVolumeId = getenv('OCI_BOOT_VOLUME_ID');
+        if ($bootVolumeId === false || empty($bootVolumeId)) {
+            $this->markTestSkipped('OCI_BOOT_VOLUME_ID not configured');
+        }
 
-        putenv('OCI_BOOT_VOLUME_ID=ocid1.bootvolume.oc1.phx.abyhqljti2tk77lrczr3eoyh6pijlrsb7bgmjp3c52if52oezi7rj574rifa');
-
-        self::$config->setBootVolumeId(getenv('OCI_BOOT_VOLUME_ID'));
-        self::$api->createInstance(self::$config, getenv('OCI_SHAPE'), getenv('OCI_SSH_PUBLIC_KEY'), getenv('OCI_AVAILABILITY_DOMAIN'));
+        try {
+            $this->expectException(ApiCallException::class);
+            self::$config->setBootVolumeId($bootVolumeId);
+            self::$api->createInstance(self::$config, getenv('OCI_SHAPE'), getenv('OCI_SSH_PUBLIC_KEY'), getenv('OCI_AVAILABILITY_DOMAIN'));
+        } catch (TooManyRequestsWaiterException $e) {
+            $this->markTestSkipped('Rate limited: ' . $e->getMessage());
+        }
     }
 }

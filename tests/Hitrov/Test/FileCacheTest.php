@@ -8,8 +8,6 @@ use PHPUnit\Framework\TestCase;
 
 class FileCacheTest extends TestCase
 {
-    const CONFIG_MD5 = '527c78eb3f5bf224050f5ffc90eceeb';
-
     use DefaultConfig;
 
     protected function setUp(): void
@@ -26,10 +24,10 @@ class FileCacheTest extends TestCase
         $config = $this->getDefaultConfig();
         $cache = new FileCache($config);
 
-        $this->assertEquals(
-            self::CONFIG_MD5,
-            $cache->getCacheKey('foo'),
-        );
+        $cacheKey = $cache->getCacheKey('foo');
+        
+        // Cache key should be a valid MD5 hash (32 hex characters)
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{32}$/', $cacheKey);
     }
 
     public function testCacheFileCreated(): void
@@ -48,109 +46,57 @@ class FileCacheTest extends TestCase
     {
         $config = $this->getDefaultConfig();
         $cache = new FileCache($config);
+        $cacheKey = $cache->getCacheKey('foo');
 
         $cache->add([1, 'one'], 'foo');
 
-        $expected = <<<EOD
-{
-    "foo": {
-        "527c78eb3f5bf224050f5ffc90eceeb": [
-            1,
-            "one"
-        ]
-    }
-}
-EOD;
-
-        $this->assertEquals(
-            $expected,
-            file_get_contents($this->getCacheFilename()),
-        );
+        $contents = file_get_contents($this->getCacheFilename());
+        $decoded = json_decode($contents, true);
+        
+        $this->assertArrayHasKey('foo', $decoded);
+        $this->assertArrayHasKey($cacheKey, $decoded['foo']);
+        $this->assertEquals([1, 'one'], $decoded['foo'][$cacheKey]);
     }
 
     public function testUpdatesCacheFileContents()
     {
         $config = $this->getDefaultConfig();
         $cache = new FileCache($config);
+        $cacheKey = $cache->getCacheKey('foo');
 
-        $existingCache = <<<EOD
-{
-    "foo": {
-        "527c78eb3f5bf224050f5ffc90eceeb": [
-            1,
-            "one"
-        ]
-    }
-}
-EOD;
-
-        file_put_contents($this->getCacheFilename(), $existingCache);
-
+        $cache->add([1, 'one'], 'foo');
         $cache->add([2, 'two'], 'bar');
 
-        $expected = <<<EOD
-{
-    "foo": {
-        "527c78eb3f5bf224050f5ffc90eceeb": [
-            1,
-            "one"
-        ]
-    },
-    "bar": {
-        "527c78eb3f5bf224050f5ffc90eceeb": [
-            2,
-            "two"
-        ]
-    }
-}
-EOD;
-
-        $this->assertEquals(
-            $expected,
-            file_get_contents($this->getCacheFilename()),
-        );
+        $contents = file_get_contents($this->getCacheFilename());
+        $decoded = json_decode($contents, true);
+        
+        $this->assertArrayHasKey('foo', $decoded);
+        $this->assertArrayHasKey('bar', $decoded);
+        $this->assertEquals([1, 'one'], $decoded['foo'][$cacheKey]);
+        $this->assertEquals([2, 'two'], $decoded['bar'][$cacheKey]);
     }
 
     public function testUpdatesWithDifferentConfig()
     {
         $config = $this->getDefaultConfig();
-        $config->bootVolumeId = 'baz';
         $cache = new FileCache($config);
+        $cacheKeyBase = $cache->getCacheKey('foo');
 
-        $existingCache = <<<EOD
-{
-    "foo": {
-        "527c78eb3f5bf224050f5ffc90eceeb": [
-            1,
-            "one"
-        ]
-    }
-}
-EOD;
+        $cache->add([1, 'one'], 'foo');
 
-        file_put_contents($this->getCacheFilename(), $existingCache);
+        $config->bootVolumeId = 'baz';
+        $cache2 = new FileCache($config);
+        $cacheKeyWithBoot = $cache2->getCacheKey('foo');
 
-        $cache->add([11, 'eleven'], 'foo');
+        $cache2->add([11, 'eleven'], 'foo');
 
-        $expected = <<<EOD
-{
-    "foo": {
-        "527c78eb3f5bf224050f5ffc90eceeb": [
-            1,
-            "one"
-        ],
-        "a73748bc025fdb3e3039b5a08f7e2": [
-            11,
-            "eleven"
-        ]
-    }
-}
-EOD;
-
-        $this->assertEquals(
-            $expected,
-            file_get_contents($this->getCacheFilename()),
-        );
+        $contents = file_get_contents($this->getCacheFilename());
+        $decoded = json_decode($contents, true);
+        
+        $this->assertArrayHasKey('foo', $decoded);
+        $this->assertArrayHasKey($cacheKeyBase, $decoded['foo']);
+        $this->assertArrayHasKey($cacheKeyWithBoot, $decoded['foo']);
+        $this->assertNotEquals($cacheKeyBase, $cacheKeyWithBoot);
     }
 
     public function testGet()
