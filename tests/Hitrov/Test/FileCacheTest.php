@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 
 class FileCacheTest extends TestCase
 {
-    const CONFIG_MD5 = '0c4b5682ece1704df5bf11d71fa55177';
+    const CONFIG_MD5 = '527c78eb3f5bf224050f5ffc90eceeb';
 
     use DefaultConfig;
 
@@ -54,7 +54,7 @@ class FileCacheTest extends TestCase
         $expected = <<<EOD
 {
     "foo": {
-        "0c4b5682ece1704df5bf11d71fa55177": [
+        "527c78eb3f5bf224050f5ffc90eceeb": [
             1,
             "one"
         ]
@@ -76,7 +76,7 @@ EOD;
         $existingCache = <<<EOD
 {
     "foo": {
-        "0c4b5682ece1704df5bf11d71fa55177": [
+        "527c78eb3f5bf224050f5ffc90eceeb": [
             1,
             "one"
         ]
@@ -91,13 +91,13 @@ EOD;
         $expected = <<<EOD
 {
     "foo": {
-        "0c4b5682ece1704df5bf11d71fa55177": [
+        "527c78eb3f5bf224050f5ffc90eceeb": [
             1,
             "one"
         ]
     },
     "bar": {
-        "0c4b5682ece1704df5bf11d71fa55177": [
+        "527c78eb3f5bf224050f5ffc90eceeb": [
             2,
             "two"
         ]
@@ -120,7 +120,7 @@ EOD;
         $existingCache = <<<EOD
 {
     "foo": {
-        "0c4b5682ece1704df5bf11d71fa55177": [
+        "527c78eb3f5bf224050f5ffc90eceeb": [
             1,
             "one"
         ]
@@ -135,11 +135,11 @@ EOD;
         $expected = <<<EOD
 {
     "foo": {
-        "0c4b5682ece1704df5bf11d71fa55177": [
+        "527c78eb3f5bf224050f5ffc90eceeb": [
             1,
             "one"
         ],
-        "b11f9e5fbe425f149a45af5a9fb40d66": [
+        "a73748bc025fdb3e3039b5a08f7e2": [
             11,
             "eleven"
         ]
