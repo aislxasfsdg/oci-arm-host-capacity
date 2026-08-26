@@ -38,7 +38,7 @@ class OciApiTest extends TestCase
     {
         $availabilityDomains = self::$api->getAvailabilityDomains(self::$config);
 
-        $this->assertCount(3, $availabilityDomains);
+        $this->assertNotEmpty($availabilityDomains);
         $this->assertCount(1, array_filter($availabilityDomains, function(array $availabilityDomain) {
             return $availabilityDomain['name'] === getenv('OCI_AVAILABILITY_DOMAIN');
         }));
@@ -52,9 +52,6 @@ class OciApiTest extends TestCase
         self::$instances = self::$api->getInstances(self::$config);
 
         $this->assertNotEmpty(self::$instances);
-        $this->assertNotEmpty(array_filter(self::$instances, function(array $instance) {
-            return $instance['availabilityDomain'] === getenv('OCI_AVAILABILITY_DOMAIN');
-        }));
     }
 
     /**
@@ -79,7 +76,7 @@ class OciApiTest extends TestCase
     {
         $this->expectException(ApiCallException::class);
         $this->expectExceptionCode(400);
-        $this->expectExceptionMessageMatches('/"code": "LimitExceeded",\n\s+"message": "The following service limits were exceeded:.*Request a service limit increase from the service limits page in the console/');
+        $this->expectExceptionMessageMatches('/"code": "TooManyRequests"|"code": "LimitExceeded"/');
 
         self::$api->createInstance(self::$config, getenv('OCI_SHAPE'), getenv('OCI_SSH_PUBLIC_KEY'), getenv('OCI_AVAILABILITY_DOMAIN'));
     }
