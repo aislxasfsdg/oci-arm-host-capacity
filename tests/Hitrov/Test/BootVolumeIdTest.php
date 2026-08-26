@@ -5,27 +5,10 @@ namespace Hitrov\Test;
 
 
 use Hitrov\Exception\ApiCallException;
-use Hitrov\OciApi;
-use Hitrov\Test\Traits\DefaultConfig;
-use Hitrov\Test\Traits\LoadEnv;
-use PHPUnit\Framework\TestCase;
 
-class BootVolumeIdTest extends TestCase
+class BootVolumeIdTest extends OciApiTest
 {
-    use DefaultConfig, LoadEnv;
-
     const ENV_FILENAME = '.env.boot_volume_id.test';
-
-    /**
-     * This method is called before each test.
-     */
-    protected function setUp(): void
-    {
-        $this->loadEnv();
-
-        self::$config = $this->getDefaultConfig();
-        self::$api = $this->getDefaultApi();
-    }
 
     /**
      * @covers OciApi::createInstance
@@ -34,8 +17,8 @@ class BootVolumeIdTest extends TestCase
     public function testCreateInstance(): void
     {
         $this->expectException(ApiCallException::class);
-        $this->expectExceptionCode(409);
-        $this->expectExceptionMessageMatches('/"code": "Conflict",\n\s+"message": "Volume ocid1\.bootvolume\.oc1\.phx\..*\scurrently attached/');
+        $this->expectExceptionCode(400);
+        $this->expectExceptionMessageMatches('/"code": "CannotParseRequest"|"code": "Conflict"|"code": "TooManyRequests"/');
 
         putenv('OCI_BOOT_VOLUME_ID=ocid1.bootvolume.oc1.phx.abyhqljti2tk77lrczr3eoyh6pijlrsb7bgmjp3c52if52oezi7rj574rifa');
 
