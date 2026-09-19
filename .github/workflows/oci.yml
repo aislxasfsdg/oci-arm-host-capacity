@@ -1,7 +1,6 @@
-name: oci
+name: Tests
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
@@ -15,53 +14,42 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         php-versions: ['8.3']
-
     name: integration-tests (PHP ${{ matrix.php-versions }})
-
     steps:
-      - uses: actions/checkout@v4
-
+      - uses: actions/checkout@v1
       - name: Install PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-versions }}
-          
-      - name: Create OCI private key file
-        run: |
-              printf "%s" "${{ secrets.OCI_PRIVATE_KEY }}" > /tmp/oci_api_key.pem
-              chmod 600 /tmp/oci_api_key.pem
-              
       - name: Validate composer.json and composer.lock
         run: composer validate
 
       - name: Get Composer Cache Directory
         id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-
-      - name: Cache Composer packages
-        uses: actions/cache@v4
+        run: |
+          echo "::set-output name=dir::$(composer config cache-files-dir)"
+      - uses: actions/cache@v2
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-php-${{ matrix.php-versions }}-composer-${{ hashFiles('**/composer.lock') }}
+          key: ${{ runner.os }}-${{ matrix.php-version }}-composer-${{ matrix.dependencies }}-${{ hashFiles('**/composer.lock') }}
           restore-keys: |
-            ${{ runner.os }}-php-${{ matrix.php-versions }}-composer-
+            ${{ runner.os }}-${{ matrix.php-version }}-composer-${{ matrix.dependencies }}-
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --no-interaction
-
+        run: |
+          composer update --prefer-dist --no-progress
       - name: Run test suite
-        run: vendor/bin/phpunit --color tests/
+        run: |
+          vendor/bin/phpunit --color tests/
         env:
           OCI_REGION: ${{ secrets.OCI_REGION }}
           OCI_USER_ID: ${{ secrets.OCI_USER_ID }}
           OCI_TENANCY_ID: ${{ secrets.OCI_TENANCY_ID }}
           OCI_KEY_FINGERPRINT: ${{ secrets.OCI_KEY_FINGERPRINT }}
-          #OCI_PRIVATE_KEY_FILENAME: ${{ secrets.OCI_PRIVATE_KEY_FILENAME }}
-          OCI_PRIVATE_KEY_FILENAME: /tmp/oci_api_key.pem
+          OCI_PRIVATE_KEY_FILENAME: ${{ secrets.OCI_PRIVATE_KEY_FILENAME }}
           OCI_AVAILABILITY_DOMAIN: ${{ secrets.OCI_AVAILABILITY_DOMAIN }}
           OCI_SUBNET_ID: ${{ secrets.OCI_SUBNET_ID }}
           OCI_IMAGE_ID: ${{ secrets.OCI_IMAGE_ID }}
