@@ -1,3 +1,4 @@
+
 name: Tests
 
 on:
@@ -9,8 +10,6 @@ on:
     branches:
       - main
 
-# Uncomment if you want to run the workflow every 5 minutes.
-#
   schedule:
     - cron: "*/5 * * * *"
 
@@ -60,6 +59,31 @@ jobs:
             --no-interaction \
             --optimize-autoloader
 
+      - name: Create OCI private key
+        env:
+          OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
+        run: |
+          mkdir -p "$HOME/.oci"
+
+          printf '%s\n' "$OCI_PRIVATE_KEY" \
+            > "$HOME/.oci/oci_api_key.pem"
+
+          chmod 600 "$HOME/.oci/oci_api_key.pem"
+
+      - name: Verify OCI private key
+        run: |
+          if [ ! -f "$HOME/.oci/oci_api_key.pem" ]; then
+            echo "ERROR: OCI private key file was not created."
+            exit 1
+          fi
+
+          if [ ! -s "$HOME/.oci/oci_api_key.pem" ]; then
+            echo "ERROR: OCI private key file is empty."
+            exit 1
+          fi
+
+          echo "OCI private key file created successfully."
+
       - name: Run test suite
         run: |
           vendor/bin/phpunit --color tests/
@@ -68,7 +92,10 @@ jobs:
           OCI_USER_ID: ${{ secrets.OCI_USER_ID }}
           OCI_TENANCY_ID: ${{ secrets.OCI_TENANCY_ID }}
           OCI_KEY_FINGERPRINT: ${{ secrets.OCI_KEY_FINGERPRINT }}
-          OCI_PRIVATE_KEY_FILENAME: ${{ secrets.OCI_PRIVATE_KEY_FILENAME }}
+
+          # This is the file created in the previous step.
+          OCI_PRIVATE_KEY_FILENAME: /home/runner/.oci/oci_api_key.pem
+
           OCI_AVAILABILITY_DOMAIN: ${{ secrets.OCI_AVAILABILITY_DOMAIN }}
           OCI_SUBNET_ID: ${{ secrets.OCI_SUBNET_ID }}
           OCI_IMAGE_ID: ${{ secrets.OCI_IMAGE_ID }}
@@ -77,5 +104,7 @@ jobs:
           OCI_SHAPE: ${{ secrets.OCI_SHAPE }}
           OCI_MAX_INSTANCES: ${{ secrets.OCI_MAX_INSTANCES }}
           OCI_SSH_PUBLIC_KEY: ${{ secrets.OCI_SSH_PUBLIC_KEY }}
+
           TELEGRAM_USER_ID: ${{ secrets.TELEGRAM_USER_ID }}
           TELEGRAM_BOT_API_KEY: ${{ secrets.TELEGRAM_BOT_API_KEY }}
+
